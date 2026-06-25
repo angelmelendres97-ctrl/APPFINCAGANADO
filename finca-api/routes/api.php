@@ -10,13 +10,11 @@ use App\Http\Controllers\Api\AnimalStatusController;
 use App\Http\Controllers\Api\SpeciesController;
 use App\Http\Controllers\Api\BreedController;
 use App\Http\Controllers\Api\MilkRecordController;
-use App\Http\Controllers\Api\MeatRecordController;
 use App\Http\Controllers\Api\HealthRecordController;
 use App\Http\Controllers\Api\ReproductiveRecordController;
 use App\Http\Controllers\Api\FeedingController;
 use App\Http\Controllers\Api\EventController;
 use App\Http\Controllers\Api\AlertController;
-use App\Http\Controllers\Api\SaleController;
 use App\Http\Controllers\Api\ExpenseController;
 use App\Http\Controllers\Api\InventoryItemController;
 use App\Http\Controllers\Api\UserController;
@@ -38,14 +36,13 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::apiResource('species', SpeciesController::class);
     Route::apiResource('breeds', BreedController::class);
     Route::apiResource('milk-records', MilkRecordController::class);
-    Route::apiResource('meat-records', MeatRecordController::class);
     Route::apiResource('health-records', HealthRecordController::class);
+    Route::post('reproductive-records/{reproductiveRecord}/transition', [ReproductiveRecordController::class, 'transition']);
     Route::apiResource('reproductive-records', ReproductiveRecordController::class);
     Route::apiResource('feeding', FeedingController::class);
     Route::apiResource('events', EventController::class);
     Route::apiResource('alerts', AlertController::class);
 
-    Route::apiResource('sales', SaleController::class);
     Route::apiResource('expenses', ExpenseController::class);
     Route::apiResource('inventory-items', InventoryItemController::class);
 

@@ -6,10 +6,14 @@ export interface ReproductiveRecord {
   reproductive_type_id: number
   event_date: string
   related_male_animal_id: number | null
+  semen_code?: string | null
+  technician_name?: string | null
+  expected_delivery_date?: string | null
   result: string | null
   offspring_count: number | null
   observations: string | null
   animal?: { id: number; internal_code: string; name: string }
+  related_male?: { id: number; internal_code: string; name: string }
   reproductive_type?: { id: number; name: string }
 }
 
@@ -26,6 +30,11 @@ export const reproductiveRecordService = {
 
   update: async (id: number, record: Partial<ReproductiveRecord>): Promise<ReproductiveRecord> => {
     const { data } = await api.put<ReproductiveRecord>(`/reproductive-records/${id}`, record)
+    return data
+  },
+
+  transition: async (id: number, payload: { result: string; observations?: string; offspring_count?: number }): Promise<ReproductiveRecord> => {
+    const { data } = await api.post<ReproductiveRecord>(`/reproductive-records/${id}/transition`, payload)
     return data
   },
 
