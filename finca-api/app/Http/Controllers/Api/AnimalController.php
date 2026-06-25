@@ -3,14 +3,17 @@
 namespace App\Http\Controllers\Api;
 
 use App\Models\Animal;
+use App\Models\AnimalPhoto;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 
 class AnimalController extends Controller
 {
     public function index(Request $request)
     {
-        $query = Animal::with(['breed', 'lot', 'status', 'category']);
+        $query = Animal::with(['breed', 'lot', 'status', 'category', 'mother', 'father', 'photos']);
         
         if ($request->filled('search')) {
             $search = $request->search;
@@ -33,7 +36,8 @@ class AnimalController extends Controller
             $query->where('lot_id', $request->lot_id);
         }
         
-        return $query->orderBy('internal_code')->paginate(15);
+        $perPage = min((int) $request->input('per_page', 15), 1000);
+        return $query->orderBy('internal_code')->paginate($perPage);
     }
 
     public function store(Request $request)
@@ -51,6 +55,9 @@ class AnimalController extends Controller
             'lot_id' => 'nullable|exists:lots,id',
             'mother_id' => 'nullable|exists:animals,id',
             'father_id' => 'nullable|exists:animals,id',
+            'photo_path' => 'nullable|string',
+            'images' => 'nullable|array',
+            'images.*' => 'nullable|string',
         ], [
             'internal_code.required' => 'El código interno es obligatorio',
             'internal_code.unique' => 'El código interno ya existe',
@@ -78,12 +85,19 @@ class AnimalController extends Controller
             $validated['created_by'] = $request->user()->id;
         }
 
-        return Animal::create($validated);
+        $images = $validated['images'] ?? [];
+        unset($validated['images']);
+        $validated['photo_path'] = $this->storePhotoIfDataUrl($images[0] ?? ($validated['photo_path'] ?? null));
+
+        $animal = Animal::create($validated);
+        $this->syncPhotos($animal, $images);
+
+        return $animal->load(['breed', 'lot', 'status', 'category', 'mother', 'father', 'photos']);
     }
 
     public function show(Animal $animal)
     {
-        return $animal->load(['breed', 'lot', 'status', 'category', 'mother', 'father', 'breed.species']);
+        return $animal->load(['breed', 'lot', 'status', 'category', 'mother', 'father', 'breed.species', 'photos', 'milkRecords', 'healthRecords', 'feedingRecords', 'reproductiveRecords']);
     }
 
     public function update(Request $request, Animal $animal)
@@ -99,9 +113,12 @@ class AnimalController extends Controller
             'breed_id' => 'nullable|exists:breeds,id',
             'category_id' => 'nullable|exists:animal_categories,id',
             'status_id' => 'nullable|exists:animal_statuses,id',
-            'lot_id' => 'nullable|lots,id',
-            'mother_id' => 'nullable|animals,id',
-            'father_id' => 'nullable|animals,id',
+            'lot_id' => 'nullable|exists:lots,id',
+            'mother_id' => 'nullable|exists:animals,id',
+            'father_id' => 'nullable|exists:animals,id',
+            'photo_path' => 'nullable|string',
+            'images' => 'nullable|array',
+            'images.*' => 'nullable|string',
         ], [
             'internal_code.unique' => 'El código interno ya existe',
             'internal_code.max' => 'El código no puede tener más de 50 caracteres',
@@ -123,8 +140,58 @@ class AnimalController extends Controller
             $validated['updated_by'] = $request->user()->id;
         }
 
+        $images = $validated['images'] ?? null;
+        unset($validated['images']);
+
+        if ($images !== null) {
+            $validated['photo_path'] = $this->storePhotoIfDataUrl($images[0] ?? null);
+        } elseif (array_key_exists('photo_path', $validated)) {
+            $validated['photo_path'] = $this->storePhotoIfDataUrl($validated['photo_path']);
+        }
+
         $animal->update($validated);
-        return $animal;
+
+        if ($images !== null) {
+            $this->syncPhotos($animal, $images);
+        }
+
+        return $animal->fresh()->load(['breed', 'lot', 'status', 'category', 'mother', 'father', 'photos']);
+    }
+
+    private function storePhotoIfDataUrl(?string $photo): ?string
+    {
+        if (!$photo || !Str::startsWith($photo, 'data:image/')) {
+            return $photo;
+        }
+
+        [$metadata, $content] = explode(',', $photo, 2);
+        preg_match('/data:image\/(.*?);base64/', $metadata, $matches);
+        $extension = $matches[1] ?? 'png';
+        $fileName = 'animals/' . Str::uuid() . '.' . $extension;
+
+        Storage::disk('public')->put($fileName, base64_decode($content));
+
+        return Storage::url($fileName);
+    }
+
+    private function syncPhotos(Animal $animal, array $images): void
+    {
+        $animal->photos()->delete();
+
+        foreach ($images as $index => $image) {
+            $path = $this->storePhotoIfDataUrl($image);
+            if (!$path) {
+                continue;
+            }
+
+            AnimalPhoto::create([
+                'animal_id' => $animal->id,
+                'file_name' => basename($path),
+                'file_path' => $path,
+                'file_type' => 'image',
+                'description' => $index === 0 ? 'Foto principal' : 'Foto adicional',
+            ]);
+        }
     }
 
     public function destroy(Animal $animal)

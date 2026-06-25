@@ -8,7 +8,7 @@ use Illuminate\Http\Request;
 
 class BreedController extends Controller
 {
-    public function index() { return Breed::all(); }
+    public function index() { return Breed::query()->selectRaw('MIN(id) as id, MIN(name) as name, MIN(species_id) as species_id')->groupByRaw('LOWER(TRIM(name))')->orderBy('name')->get(); }
     
     public function store(Request $request) 
     { 

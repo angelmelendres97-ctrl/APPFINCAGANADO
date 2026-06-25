@@ -10,7 +10,7 @@ class MilkRecordController extends Controller
 {
     public function index(Request $request)
     {
-        $query = MilkRecord::with('animal', 'creator');
+        $query = MilkRecord::with(['animal.status', 'creator']);
         
         if ($request->filled('animal_id')) {
             $query->where('animal_id', $request->animal_id);
@@ -27,8 +27,29 @@ class MilkRecordController extends Controller
         if ($request->filled('milking_session')) {
             $query->where('milking_session', $request->milking_session);
         }
+
+        if ($request->filled('animal_code')) {
+            $query->whereHas('animal', function ($animalQuery) use ($request) {
+                $animalQuery->where('internal_code', 'like', '%' . $request->animal_code . '%');
+            });
+        }
+
+        if ($request->filled('liters_min')) {
+            $query->where('quantity_liters', '>=', $request->liters_min);
+        }
+
+        if ($request->filled('liters_max')) {
+            $query->where('quantity_liters', '<=', $request->liters_max);
+        }
+
+        if ($request->filled('animal_status')) {
+            $query->whereHas('animal.status', function ($statusQuery) use ($request) {
+                $statusQuery->where('name', $request->animal_status);
+            });
+        }
         
-        $records = $query->orderBy('record_date', 'desc')->paginate(20);
+        $perPage = min((int) $request->input('per_page', 20), 1000);
+        $records = $query->orderBy('record_date', 'desc')->paginate($perPage);
         
         return response()->json($records);
     }
@@ -39,7 +60,9 @@ class MilkRecordController extends Controller
             'animal_id' => 'required|exists:animals,id',
             'record_date' => 'required|date',
             'quantity_liters' => 'required|numeric|min:0',
-            'milking_session' => 'required|in:morning,afternoon,evening,night',
+            'milking_session' => 'required|in:morning,afternoon',
+            'temperature' => 'nullable|numeric',
+            'mastitis_check' => 'nullable|boolean',
             'observation' => 'nullable|string'
         ], [
             'animal_id.required' => 'Seleccione un animal',
@@ -53,7 +76,18 @@ class MilkRecordController extends Controller
             'milking_session.in' => 'Seleccione un ordeño válido',
         ]);
         
-        $validated['created_by'] = $request->user()->id;
+        $duplicate = MilkRecord::where('animal_id', $validated['animal_id'])
+            ->whereDate('record_date', $validated['record_date'])
+            ->where('milking_session', $validated['milking_session'])
+            ->exists();
+
+        if ($duplicate) {
+            return response()->json(['message' => 'Ya existe un control para este animal, fecha y jornada'], 422);
+        }
+
+        if ($request->user()) {
+            $validated['created_by'] = $request->user()->id;
+        }
         $validated['notes'] = $validated['observation'] ?? null;
         unset($validated['observation']);
         
@@ -68,7 +102,9 @@ class MilkRecordController extends Controller
             'animal_id' => 'sometimes|exists:animals,id',
             'record_date' => 'sometimes|date',
             'quantity_liters' => 'sometimes|numeric|min:0',
-            'milking_session' => 'sometimes|in:morning,afternoon,evening,night',
+            'milking_session' => 'sometimes|in:morning,afternoon',
+            'temperature' => 'nullable|numeric',
+            'mastitis_check' => 'nullable|boolean',
             'observation' => 'nullable|string'
         ], [
             'animal_id.exists' => 'El animal seleccionado no existe',
@@ -78,6 +114,20 @@ class MilkRecordController extends Controller
             'milking_session.in' => 'Seleccione un ordeño válido',
         ]);
         
+        $animalId = $validated['animal_id'] ?? $milkRecord->animal_id;
+        $recordDate = $validated['record_date'] ?? $milkRecord->record_date;
+        $session = $validated['milking_session'] ?? $milkRecord->milking_session;
+
+        $duplicate = MilkRecord::where('animal_id', $animalId)
+            ->whereDate('record_date', $recordDate)
+            ->where('milking_session', $session)
+            ->where('id', '!=', $milkRecord->id)
+            ->exists();
+
+        if ($duplicate) {
+            return response()->json(['message' => 'Ya existe un control para este animal, fecha y jornada'], 422);
+        }
+
         $validated['notes'] = $validated['observation'] ?? null;
         unset($validated['observation']);
         
