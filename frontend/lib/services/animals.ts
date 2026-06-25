@@ -15,6 +15,8 @@ export interface Animal {
   weight_current: number | null
   color: string | null
   photo_path: string | null
+  mother_id: number | null
+  father_id: number | null
   active: boolean
   created_by: number | null
   lot?: { id: number; name: string; code: string }
@@ -23,6 +25,7 @@ export interface Animal {
   status?: { id: number; name: string }
   mother?: { id: number; internal_code: string; name: string }
   father?: { id: number; internal_code: string; name: string }
+  photos?: { id: number; file_path: string; description: string | null }[]
 }
 
 export const animalService = {
