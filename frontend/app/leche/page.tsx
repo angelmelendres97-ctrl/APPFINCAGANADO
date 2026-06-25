@@ -27,6 +27,7 @@ import { Pencil, Trash2, Plus, Download } from "lucide-react"
 import { milkRecordService, type MilkRecord } from "@/lib/services/milk-records"
 import { animalService, type Animal } from "@/lib/services/animals"
 import { useToast } from "@/hooks/use-toast"
+import { unwrapList } from "@/lib/services/pagination"
 
 interface RegistroLeche {
   id: number
@@ -78,17 +79,20 @@ const columns = [
     ),
   },
   {
-    key: "cantidad",
-    label: "Cantidad (L)",
-    render: (item: RegistroLeche) => (
-      <span className="font-semibold">{item.cantidad.toFixed(2)}</span>
-    ),
-  },
-  {
-    key: "temperatura",
-    label: "Temp. (°C)",
-    render: (item: RegistroLeche) => item.temperatura.toFixed(2),
-  },
+  key: "cantidad",
+  label: "Cantidad (L)",
+  render: (item: RegistroLeche) => (
+    <span className="font-semibold">
+      {Number(item.cantidad ?? 0).toFixed(2)}
+    </span>
+  ),
+},
+ {
+  key: "temperatura",
+  label: "Temp. (°C)",
+  render: (item: RegistroLeche) =>
+    Number(item.temperatura ?? 0).toFixed(2),
+},
   {
     key: "mastitis",
     label: "Mastitis",
@@ -124,9 +128,9 @@ export default function LechePage() {
         milkRecordService.list(),
         animalService.list(),
       ])
-      const loadedAnimals = (animalsData as Animal[]).filter((a) => a.sex === "female")
+      const loadedAnimals = unwrapList<Animal>(animalsData).filter((a) => a.sex === "female")
       setAnimals(loadedAnimals)
-      const mapped = (recordsData as MilkRecord[]).map(toRegistroLeche)
+      const mapped = unwrapList<MilkRecord>(recordsData).map(toRegistroLeche)
       const withAnimalInfo = mapped.map((r) => {
         const animal = loadedAnimals.find((a) => a.id === r.animalId)
         return { ...r, animalCodigo: animal?.internal_code, animalNombre: animal?.name }
@@ -260,7 +264,7 @@ export default function LechePage() {
             <CardContent className="p-4">
               <p className="text-sm text-muted-foreground">Producción Hoy</p>
               <p className="text-3xl font-bold text-primary">
-                {stats.produccionHoy.toFixed(1)} L
+                {parseFloat(stats.produccionHoy ?? 0).toFixed(1)} L
               </p>
             </CardContent>
           </Card>

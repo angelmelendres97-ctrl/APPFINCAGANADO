@@ -37,7 +37,7 @@ class EventController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'farm_id' => 'required|exists:farms,id',
+            'farm_id' => 'nullable|exists:farms,id',
             'animal_id' => 'nullable|exists:animals,id',
             'lot_id' => 'nullable|exists:lots,id',
             'event_type_id' => 'required|exists:event_types,id',
@@ -50,7 +50,6 @@ class EventController extends Controller
             'status' => 'required|in:scheduled,in_progress,completed,cancelled',
             'reminder_date' => 'nullable|date'
         ], [
-            'farm_id.required' => 'Seleccione una finca',
             'farm_id.exists' => 'La finca no existe',
             'animal_id.exists' => 'El animal no existe',
             'lot_id.exists' => 'El potrero no existe',
@@ -67,6 +66,10 @@ class EventController extends Controller
             'reminder_date.date' => 'Ingrese una fecha válida',
         ]);
         
+        if (empty($validated['farm_id'])) {
+            $farm = \App\Models\Farm::first();
+            $validated['farm_id'] = $farm ? $farm->id : null;
+        }
         $validated['created_by'] = $request->user()->id;
         
         $event = Event::create($validated);
@@ -113,13 +116,5 @@ class EventController extends Controller
     {
         $event->delete();
         return response()->json(['message' => 'Evento eliminado']);
-    }
-}
-
-class EventTypeController extends Controller
-{
-    public function index()
-    {
-        return response()->json(EventType::where('active', true)->get());
     }
 }

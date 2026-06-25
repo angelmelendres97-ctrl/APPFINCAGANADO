@@ -24,6 +24,7 @@ import {
 import { Pencil, Trash2, Plus, Calendar } from "lucide-react"
 import { eventService, eventTypeService, type Event, type EventType } from "@/lib/services/events"
 import { useToast } from "@/hooks/use-toast"
+import { unwrapList } from "@/lib/services/pagination"
 
 interface Evento {
   id: number
@@ -54,8 +55,8 @@ const toEventPayload = (e: Partial<Evento>, eventTypes: EventType[]) => {
     title: e.titulo,
     event_type_id: eventType?.id || 1,
     event_date: e.fecha,
-    priority: e.prioridad || "normal",
-    status: e.estado || "pending",
+    priority: e.prioridad || "medium",
+    status: e.estado || "scheduled",
     description: e.descripcion || null,
   }
 }
@@ -70,8 +71,8 @@ const defaultEvento: Partial<Evento> = {
   titulo: "",
   tipo: "Control",
   fecha: new Date().toISOString().split("T")[0],
-  prioridad: "normal",
-  estado: "pending",
+  prioridad: "medium",
+  estado: "scheduled",
   descripcion: "",
 }
 
@@ -92,9 +93,9 @@ export default function EventosPage() {
         eventService.list(),
         eventTypeService.list(),
       ])
-      const typeList = typesData as EventType[]
+      const typeList = unwrapList<EventType>(typesData)
       setEventTypes(typeList)
-      setEventos((eventsData as Event[]).map((e) => toEvento(e, typeList)))
+      setEventos(unwrapList<Event>(eventsData).map((e) => toEvento(e, typeList)))
     } catch {
       toast({ title: "Error", description: "No se pudieron cargar los eventos.", variant: "destructive" })
     } finally {

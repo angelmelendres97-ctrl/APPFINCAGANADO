@@ -24,6 +24,7 @@ import {
 import { Pencil, Trash2, Plus, MapPin, Search } from "lucide-react"
 import { lotService, type Lot } from "@/lib/services/lots"
 import { useToast } from "@/hooks/use-toast"
+import { unwrapList } from "@/lib/services/pagination"
 
 interface Lote {
   id: number
@@ -40,20 +41,20 @@ const toLote = (lot: Lot): Lote => ({
   id: lot.id,
   codigo: lot.code,
   nombre: lot.name,
-  tipo: lot.type,
+  tipo: lot.type === "corral" ? "Corral" : "Potrero",
   area: lot.area_size ?? 0,
   capacidad: lot.capacity,
   animales: lot.current_animals_count,
-  estado: lot.status,
+  estado: lot.status === "inactive" ? "Inactivo" : lot.status === "maintenance" ? "Mantenimiento" : "Activo",
 })
 
 const toLotPayload = (lote: Partial<Lote>) => ({
   code: lote.codigo,
   name: lote.nombre,
-  type: lote.tipo,
+  type: lote.tipo === "Corral" ? "corral" : "pasture",
   area_size: lote.area,
   capacity: lote.capacidad,
-  status: lote.estado,
+  status: lote.estado === "Inactivo" ? "inactive" : lote.estado === "Mantenimiento" ? "maintenance" : "active",
 })
 
 const defaultLote: Partial<Lote> = {
@@ -80,7 +81,7 @@ export default function PotrerosPage() {
     try {
       setLoading(true)
       const data = await lotService.list()
-      setLotes((data as Lot[]).map(toLote))
+      setLotes(unwrapList<Lot>(data).map(toLote))
     } catch {
       toast({
         title: "Error",
@@ -233,12 +234,12 @@ export default function PotrerosPage() {
                     <StatusBadge status={lote.estado} />
                   </div>
 
-                  <div className="mt-4 flex items-center gap-2 text-sm text-muted-foreground">
-                    <MapPin className="h-4 w-4" />
-                    <span>{lote.tipo}</span>
-                    <span className="mx-1">|</span>
-                    <span>{lote.area.toFixed(2)} ha</span>
-                  </div>
+                 <div className="mt-4 flex items-center gap-2 text-sm text-muted-foreground">
+  <MapPin className="h-4 w-4" />
+  <span>{lote.tipo}</span>
+  <span className="mx-1">|</span>
+  <span>{Number(lote.area ?? 0).toFixed(2)} ha</span>
+</div>
 
                   <div className="mt-4">
                     <div className="flex items-center justify-between text-sm">

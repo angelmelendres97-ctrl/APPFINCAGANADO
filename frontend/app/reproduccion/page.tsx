@@ -32,6 +32,7 @@ import {
 } from "@/lib/services/reproductive-records"
 import { animalService, type Animal } from "@/lib/services/animals"
 import { useToast } from "@/hooks/use-toast"
+import { unwrapList } from "@/lib/services/pagination"
 
 interface Reproduccion {
   id: number
@@ -149,12 +150,13 @@ export default function ReproduccionPage() {
         animalService.list(),
         reproductiveTypeService.list(),
       ])
-      const reproTypeList = typesData as ReproductiveType[]
+      const reproTypeList = unwrapList<ReproductiveType>(typesData)
       setReproTypes(reproTypeList)
-      setAnimals((animalsData as Animal[]).filter((a) => a.sex === "female"))
-      const mapped = (recordsData as ReproductiveRecord[]).map((r) => {
+      const animalList = unwrapList<Animal>(animalsData)
+      setAnimals(animalList.filter((a) => a.sex === "female"))
+      const mapped = unwrapList<ReproductiveRecord>(recordsData).map((r) => {
         const repro = toReproduccion(r, reproTypeList)
-        const animal = (animalsData as Animal[]).find((a) => a.id === r.animal_id)
+        const animal = animalList.find((a) => a.id === r.animal_id)
         return { ...repro, animalInfo: animal ? `${animal.internal_code} ${animal.name}` : `#${r.animal_id}` }
       })
       setRegistros(mapped)
