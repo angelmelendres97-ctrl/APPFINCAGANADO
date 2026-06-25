@@ -15,6 +15,8 @@ export interface Animal {
   weight_current: number | null
   color: string | null
   photo_path: string | null
+  mother_id: number | null
+  father_id: number | null
   active: boolean
   created_by: number | null
   lot?: { id: number; name: string; code: string }
@@ -23,6 +25,7 @@ export interface Animal {
   status?: { id: number; name: string }
   mother?: { id: number; internal_code: string; name: string }
   father?: { id: number; internal_code: string; name: string }
+  photos?: { id: number; file_path: string; description: string | null }[]
 }
 
 export const animalService = {
@@ -41,8 +44,13 @@ export const animalService = {
     return data
   },
 
-  update: async (id: number, animal: Partial<Animal>): Promise<Animal> => {
+  update: async (id: number, animal: Partial<Animal> | Record<string, unknown>): Promise<Animal> => {
     const { data } = await api.put<Animal>(`/animals/${id}`, animal)
+    return data
+  },
+
+  updateStatus: async (id: number, statusId: number): Promise<Animal> => {
+    const { data } = await api.put<Animal>(`/animals/${id}`, { status_id: statusId })
     return data
   },
 
