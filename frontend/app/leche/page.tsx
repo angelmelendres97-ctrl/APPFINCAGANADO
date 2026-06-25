@@ -79,17 +79,20 @@ const columns = [
     ),
   },
   {
-    key: "cantidad",
-    label: "Cantidad (L)",
-    render: (item: RegistroLeche) => (
-      <span className="font-semibold">{item.cantidad.toFixed(2)}</span>
-    ),
-  },
-  {
-    key: "temperatura",
-    label: "Temp. (°C)",
-    render: (item: RegistroLeche) => item.temperatura.toFixed(2),
-  },
+  key: "cantidad",
+  label: "Cantidad (L)",
+  render: (item: RegistroLeche) => (
+    <span className="font-semibold">
+      {Number(item.cantidad ?? 0).toFixed(2)}
+    </span>
+  ),
+},
+ {
+  key: "temperatura",
+  label: "Temp. (°C)",
+  render: (item: RegistroLeche) =>
+    Number(item.temperatura ?? 0).toFixed(2),
+},
   {
     key: "mastitis",
     label: "Mastitis",
@@ -261,7 +264,7 @@ export default function LechePage() {
             <CardContent className="p-4">
               <p className="text-sm text-muted-foreground">Producción Hoy</p>
               <p className="text-3xl font-bold text-primary">
-                {stats.produccionHoy.toFixed(1)} L
+                {parseFloat(stats.produccionHoy ?? 0).toFixed(1)} L
               </p>
             </CardContent>
           </Card>

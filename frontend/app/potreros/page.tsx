@@ -234,12 +234,12 @@ export default function PotrerosPage() {
                     <StatusBadge status={lote.estado} />
                   </div>
 
-                  <div className="mt-4 flex items-center gap-2 text-sm text-muted-foreground">
-                    <MapPin className="h-4 w-4" />
-                    <span>{lote.tipo}</span>
-                    <span className="mx-1">|</span>
-                    <span>{lote.area.toFixed(2)} ha</span>
-                  </div>
+                 <div className="mt-4 flex items-center gap-2 text-sm text-muted-foreground">
+  <MapPin className="h-4 w-4" />
+  <span>{lote.tipo}</span>
+  <span className="mx-1">|</span>
+  <span>{Number(lote.area ?? 0).toFixed(2)} ha</span>
+</div>
 
                   <div className="mt-4">
                     <div className="flex items-center justify-between text-sm">
