@@ -8,7 +8,7 @@ use Illuminate\Http\Request;
 
 class AnimalCategoryController extends Controller
 {
-    public function index() { return AnimalCategory::all(); }
+    public function index() { return AnimalCategory::query()->selectRaw('MIN(id) as id, MIN(name) as name, MIN(species_id) as species_id')->groupByRaw('LOWER(TRIM(name))')->orderBy('name')->get(); }
     
     public function store(Request $request) 
     { 
