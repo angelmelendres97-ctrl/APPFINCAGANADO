@@ -33,6 +33,7 @@ import {
 } from "@/lib/services/health-records"
 import { animalService, type Animal } from "@/lib/services/animals"
 import { useToast } from "@/hooks/use-toast"
+import { unwrapList } from "@/lib/services/pagination"
 
 interface RegistroSanidad {
   id: number
@@ -175,12 +176,13 @@ export default function SanidadPage() {
         animalService.list(),
         healthTypeService.list(),
       ])
-      const healthTypeList = typesData as HealthType[]
+      const healthTypeList = unwrapList<HealthType>(typesData)
       setHealthTypes(healthTypeList)
-      setAnimals(animalsData as Animal[])
-      const mapped = (recordsData as HealthRecord[]).map((r) => {
+      const animalList = unwrapList<Animal>(animalsData)
+      setAnimals(animalList)
+      const mapped = unwrapList<HealthRecord>(recordsData).map((r) => {
         const reg = toRegistroSanidad(r, healthTypeList)
-        const animal = (animalsData as Animal[]).find((a) => a.id === r.animal_id)
+        const animal = animalList.find((a) => a.id === r.animal_id)
         return { ...reg, animalInfo: animal ? `${animal.internal_code} ${animal.name}` : `#${r.animal_id}` }
       })
       setRegistros(mapped)

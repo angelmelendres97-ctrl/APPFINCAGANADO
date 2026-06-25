@@ -51,6 +51,11 @@ class LotController extends Controller
             'capacity.min' => 'La capacidad no puede ser negativa',
         ]);
         
+        if (empty($validated['farm_id'])) {
+            $farm = \App\Models\Farm::first();
+            $validated['farm_id'] = $farm ? $farm->id : null;
+        }
+
         $lot = Lot::create($validated);
         
         return response()->json($lot, 201);
@@ -67,7 +72,7 @@ class LotController extends Controller
         $validated = $request->validate([
             'name' => 'sometimes|string|max:255',
             'code' => 'sometimes|string|unique:lots,code,' . $lot->id,
-            'type' => 'sometimes|in:paddock,corral,stable,feeding_area',
+            'type' => 'sometimes|in:pasture,paddock,corral,stable,feeding_area',
             'status' => 'sometimes|in:active,inactive,maintenance',
             'area_size' => 'nullable|numeric|min:0',
             'capacity' => 'nullable|integer|min:0',

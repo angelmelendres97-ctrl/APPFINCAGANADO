@@ -98,11 +98,3 @@ class ReproductiveRecordController extends Controller
         return response()->json(['message' => 'Eliminado']);
     }
 }
-
-class ReproductiveTypeController extends Controller
-{
-    public function index()
-    {
-        return response()->json(\App\Models\ReproductiveType::where('active', true)->get());
-    }
-}

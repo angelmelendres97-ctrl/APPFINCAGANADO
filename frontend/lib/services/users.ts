@@ -20,6 +20,11 @@ export const userService = {
     return data
   },
 
+  create: async (user: Partial<User> & { password?: string }): Promise<User> => {
+    const { data } = await api.post<User>("/users", user)
+    return data
+  },
+
   update: async (id: number, user: Partial<User>): Promise<User> => {
     const { data } = await api.put<User>(`/users/${id}`, user)
     return data

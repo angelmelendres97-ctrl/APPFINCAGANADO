@@ -25,6 +25,7 @@ import {
 import { Pencil, Trash2, Plus, Package, AlertTriangle } from "lucide-react"
 import { inventoryService, type InventoryItem } from "@/lib/services/inventory"
 import { useToast } from "@/hooks/use-toast"
+import { unwrapList } from "@/lib/services/pagination"
 
 interface Inventario {
   id: number
@@ -92,7 +93,7 @@ export default function InventarioPage() {
     try {
       setLoading(true)
       const data = await inventoryService.list()
-      setItems((data as InventoryItem[]).map(toInventario))
+      setItems(unwrapList<InventoryItem>(data).map(toInventario))
     } catch {
       toast({ title: "Error", description: "No se pudieron cargar los productos.", variant: "destructive" })
     } finally {

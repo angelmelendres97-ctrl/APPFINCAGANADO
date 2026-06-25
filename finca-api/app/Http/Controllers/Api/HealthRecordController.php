@@ -107,11 +107,3 @@ class HealthRecordController extends Controller
         return response()->json(['message' => 'Registro eliminado']);
     }
 }
-
-class HealthTypeController extends Controller
-{
-    public function index()
-    {
-        return response()->json(\App\Models\HealthType::where('active', true)->get());
-    }
-}

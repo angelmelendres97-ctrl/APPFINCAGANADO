@@ -27,6 +27,7 @@ import { Pencil, Trash2, Plus, Download } from "lucide-react"
 import { milkRecordService, type MilkRecord } from "@/lib/services/milk-records"
 import { animalService, type Animal } from "@/lib/services/animals"
 import { useToast } from "@/hooks/use-toast"
+import { unwrapList } from "@/lib/services/pagination"
 
 interface RegistroLeche {
   id: number
@@ -124,9 +125,9 @@ export default function LechePage() {
         milkRecordService.list(),
         animalService.list(),
       ])
-      const loadedAnimals = (animalsData as Animal[]).filter((a) => a.sex === "female")
+      const loadedAnimals = unwrapList<Animal>(animalsData).filter((a) => a.sex === "female")
       setAnimals(loadedAnimals)
-      const mapped = (recordsData as MilkRecord[]).map(toRegistroLeche)
+      const mapped = unwrapList<MilkRecord>(recordsData).map(toRegistroLeche)
       const withAnimalInfo = mapped.map((r) => {
         const animal = loadedAnimals.find((a) => a.id === r.animalId)
         return { ...r, animalCodigo: animal?.internal_code, animalNombre: animal?.name }

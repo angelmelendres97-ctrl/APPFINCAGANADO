@@ -24,6 +24,7 @@ import {
 import { Pencil, Trash2, Plus, Search, Users } from "lucide-react"
 import { userService, type User } from "@/lib/services/users"
 import { useToast } from "@/hooks/use-toast"
+import { unwrapList } from "@/lib/services/pagination"
 
 interface Usuario {
   id: number
@@ -38,7 +39,7 @@ const toUsuario = (user: User): Usuario => ({
   nombre: `${user.first_name} ${user.last_name}`.trim(),
   email: user.email,
   rol: user.role?.name || "Operario",
-  estado: user.status,
+  estado: user.status === "inactive" ? "Inactivo" : user.status === "suspended" ? "Suspendido" : "Activo",
 })
 
 const toUserPayload = (u: Partial<Usuario>) => {
@@ -47,8 +48,8 @@ const toUserPayload = (u: Partial<Usuario>) => {
     first_name: nameParts[0] || "",
     last_name: nameParts.slice(1).join(" ") || "",
     email: u.email,
-    status: u.estado,
-    role: { name: u.rol || "Operario" },
+    status: u.estado === "Inactivo" ? "inactive" : u.estado === "Suspendido" ? "suspended" : "active",
+    role_name: u.rol || "Operario",
   }
 }
 
@@ -79,7 +80,7 @@ export default function UsuariosPage() {
     try {
       setLoading(true)
       const data = await userService.list()
-      setUsuarios((data as User[]).map(toUsuario))
+      setUsuarios(unwrapList<User>(data).map(toUsuario))
     } catch {
       toast({
         title: "Error",
