@@ -9,7 +9,7 @@ export interface MilkRecord {
   temperature?: number
   mastitis_check?: boolean
   observation?: string
-  animal?: { id: number; internal_code: string; name: string }
+  animal?: { id: number; internal_code: string; name: string; status?: { id: number; name: string } }
 }
 
 export interface MilkStatistics {

@@ -21,28 +21,32 @@ export function ImageUpload({
   const fileInputRef = React.useRef<HTMLInputElement>(null)
   const [draggedIndex, setDraggedIndex] = React.useState<number | null>(null)
   const [dragOverIndex, setDragOverIndex] = React.useState<number | null>(null)
+  const [message, setMessage] = React.useState("")
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files
     if (!files) return
 
-    const newImages: string[] = []
-    const remaining = maxImages - images.length
+    const validFiles = Array.from(files)
+      .filter((file) => file.type.startsWith("image/"))
+      .slice(0, maxImages - images.length)
 
-    Array.from(files).slice(0, remaining).forEach((file) => {
-      if (file.type.startsWith("image/")) {
+    if (validFiles.length === 0) {
+      setMessage("Seleccione archivos de imagen válidos.")
+      return
+    }
+
+    Promise.all(
+      validFiles.map((file) => new Promise<string>((resolve, reject) => {
         const reader = new FileReader()
-        reader.onload = (event) => {
-          if (event.target?.result) {
-            newImages.push(event.target.result as string)
-            if (newImages.length === Math.min(files.length, remaining)) {
-              onChange([...images, ...newImages])
-            }
-          }
-        }
+        reader.onload = (event) => resolve(event.target?.result as string)
+        reader.onerror = reject
         reader.readAsDataURL(file)
-      }
-    })
+      }))
+    ).then((newImages) => {
+      onChange([...images, ...newImages])
+      setMessage(`${newImages.length} imagen${newImages.length === 1 ? "" : "es"} cargada${newImages.length === 1 ? "" : "s"} en vista previa.`)
+    }).catch(() => setMessage("No se pudieron cargar las imágenes seleccionadas."))
 
     if (fileInputRef.current) {
       fileInputRef.current.value = ""
@@ -52,6 +56,7 @@ export function ImageUpload({
   const removeImage = (index: number) => {
     const newImages = images.filter((_, i) => i !== index)
     onChange(newImages)
+    setMessage("Imagen eliminada de la vista previa.")
   }
 
   const handleDragStart = (index: number) => {
@@ -69,6 +74,7 @@ export function ImageUpload({
       const [removed] = newImages.splice(draggedIndex, 1)
       newImages.splice(dragOverIndex, 0, removed)
       onChange(newImages)
+      setMessage("Orden de imágenes actualizado.")
     }
     setDraggedIndex(null)
     setDragOverIndex(null)
@@ -141,6 +147,7 @@ export function ImageUpload({
       <p className="text-xs text-muted-foreground">
         {images.length}/{maxImages} imágenes. Arrastra para reordenar. La primera será la imagen de perfil.
       </p>
+      {message && <p className="text-xs font-medium text-primary">{message}</p>}
     </div>
   )
 }
